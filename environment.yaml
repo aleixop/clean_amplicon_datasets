@@ -1,0 +1,13 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - snakemake-minimal >=8.4.4
+  - seqkit
+  - blast
+  - hmmer
+  - mafft
+  - r-tidyverse
+  - r-argparser
+  - bioconductor-biostrings
+  - bioconductor-iranges
