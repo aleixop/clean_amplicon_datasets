@@ -156,3 +156,37 @@ rule process_blast_gaps:
         "--diff_ranks_log {params.diff_ranks_log} "
         "--out_seqtab {output.filtered_seqtab} "
         "--out_removed_seqs {output.removed_seqs}"
+
+rule trim_fasta:
+    input:
+        seqtab = "results/4-internal_gaps/{sample}_internal-gaps_seqtab.rds",
+        script = "scripts/seqtab_to_fasta.R"  # The script to generate the FASTA file from seqtab
+    output:
+        fasta = "results/5-chimeras/{sample}.fasta",
+        fasta_trimmed = "results/5-chimeras/{sample}_trimmed_1-180.fasta"
+    shell:
+        # Step 1: Generate FASTA file from seqtab with the -add_names flag
+        "Rscript {input.script} "
+        "--seqtab {input.seqtab} "
+        "--out_fasta {output.fasta} "
+        "--add_names && "
+        
+        # Step 2: Trim the FASTA to the first 180 bp using seqkit
+        "seqkit subseq -r 1:180 {output.fasta} > {output.fasta_trimmed}"
+
+rule blast_chimeras_1:
+    input:
+        fasta_trimmed = "results/5-chimeras/{sample}_trimmed_1-180.fasta",
+        blast_db = "results/4-internal_gaps/{sample}_blastdb"  
+    output:
+        blast_chimeras_1 = "results/5-chimeras/{sample}_blast_chimeras_1.txt"
+    shell:
+        # Perform the BLAST search on the trimmed FASTA file
+        "blastn "
+        "-outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen slen' "
+        "-perc_identity 100 "
+        "-db {input.blast_db}/{wildcards.sample} "
+        "-query {input.fasta_trimmed} "
+        "-num_threads {threads} "
+        "-evalue 1e-50 "
+        "> {output.blast_chimeras_1}"

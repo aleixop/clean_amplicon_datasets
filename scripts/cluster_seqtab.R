@@ -163,6 +163,7 @@ representatives <-
 
 removed_asvs <- # not really removed, but clustered, that is why reads = 0, this is needed for final reporting
   clusters_out |>
+  ungroup(cluster) |> 
   filter(seq != representative) |>
   select(ASV = seq) |>
   mutate(
