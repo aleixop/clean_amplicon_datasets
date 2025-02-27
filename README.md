@@ -2,6 +2,20 @@
 
 This is a pipeline to clean short eukaryotic amplicon datasets processed with dada2. It has been fine-tuned for sequences of the V4 region of the 18S ribosomal RNA gene. If you need some help using dada2 you can take a look at our [dada2_guidelines](https://github.com/adriaaula/dada2_guidelines).
 
+## Summary
+
+- [Overview](#overview)
+- [How to run this workflow](#how-to-run-this-workflow)
+  - [Step 1: clone this repository](#step-1-clone-this-repository)
+  - [Step 2: install required software](#step-2-install-required-software)
+    - [Manual installation](#manual-installation)
+    - [Conda installation](#conda-installation)
+  - [Step 3: prepare your input files](#step-3-prepare-your-input-files)
+  - [Step 4: run the pipeline](#step-4-run-the-pipeline)
+    - [With manual installation](#with-manual-installation)
+    - [With conda installation](#with-conda-installation)
+- [Pipeline steps in detail](#pipeline-steps-in-detail)
+
 ## Overview
 
 The cleaning process is based in five main steps:
