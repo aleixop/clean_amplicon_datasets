@@ -5,7 +5,7 @@ rule all:
         expand("results/final/{sample}_report.tsv", sample=SAMPLES),
         expand("results/final/{sample}_final_seqtab.rds", sample=SAMPLES),
         expand("results/final/{sample}_removed_seqs.txt", sample=SAMPLES)
-        
+
 rule filter_seqtab:
     input:
         seqtab = "data/input/{sample}.rds",
