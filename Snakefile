@@ -1,3 +1,10 @@
+rule all:
+    input:
+        # This includes the final report, final seqtab, and a file with all removed sequences
+        final_report = "results/final/{sample}_report.tsv",  # Final report
+        final_seqtab = "results/final/{sample}_final_seqtab.rds",  # Final cleaned seqtab
+        removed_seqs = "results/final/{sample}_removed_seqs.txt"  # All removed sequences
+
 rule filter_seqtab:
     input:
         seqtab = "data/input/{sample}.rds",
