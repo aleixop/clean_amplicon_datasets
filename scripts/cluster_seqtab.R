@@ -68,10 +68,6 @@ suppressMessages(library(DECIPHER))
 suppressMessages(library(Biostrings))
 suppressMessages(library(data.table))
 
-cat(paste0("# You are using DECIPHER version ", packageVersion("DECIPHER"), "\n"))
-cat(paste0("# Clustering at ", perc_identity, "% identity\n"))
-
-
 # Create ASV df -----------------------------------------------------------
 
 asv_df <-
@@ -107,24 +103,6 @@ clusters <-
   ) |>
   as_tibble(rownames = "name")
 
-cat(paste0(
-  "# ",
-  n_distinct(clusters$cluster),
-  " clusters created out of ",
-  length(dna),
-  " ASVs\n"
-))
-
-summary_clustering <-
-  clusters |>
-  group_by(cluster) |>
-  tally() |>
-  pull(n) |>
-  summary()
-
-cat("# Summary of cluster sizes:\n")
-print(summary_clustering)
-
 asv_df_clusters <-
   asv_df |>
   left_join(clusters, by = "name")
@@ -132,7 +110,6 @@ asv_df_clusters <-
 # Choose representatives --------------------------------------------------
 
 if (representative_method == "abundance") {
-  cat("# Selecting cluster representatives by highest abundance\n")
 
   clusters_out <-
     asv_df_clusters |>
@@ -140,7 +117,6 @@ if (representative_method == "abundance") {
     mutate(representative = seq[size == max(size)][1]) |>
     select(-name)
 } else if (representative_method == "length") {
-  cat("# Selecting cluster representatives by highest length\n")
 
   clusters_out <-
     asv_df_clusters |>
@@ -163,12 +139,12 @@ representatives <-
 
 removed_asvs <- # not really removed, but clustered, that is why reads = 0, this is needed for final reporting
   clusters_out |>
-  ungroup(cluster) |> 
+  ungroup(cluster) |>
   filter(seq != representative) |>
   select(ASV = seq) |>
   mutate(
     reads = 0,
-    reason_removed = "clustering"
+    step_removed = "2 - Clustering"
   )
 
 write_tsv(removed_asvs, out_removed_seqs)

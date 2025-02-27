@@ -81,11 +81,11 @@ removed_asvs <-
   as_tibble(rownames = "ASV") |>
   dplyr::rename(reads = value) |>
   mutate(
-    reason_removed =
+    step_removed =
       case_when(
-        nchar(ASV) < min_bp ~ "bp",
-        reads < min_abundance ~ "abundance",
-        TRUE ~ "occurrence"
+        nchar(ASV) < min_bp ~ "1.Filtering - Too short",
+        reads < min_abundance ~ "1.Filtering - Low abundance",
+        TRUE ~ "1.Filtering - Low occurrence"
       )
   )
 
@@ -93,12 +93,3 @@ removed_asvs <-
 
 saveRDS(filtered_seqtab, out_seqtab)
 write_tsv(removed_asvs, out_removed_seqs)
-
-# Print report ------------------------------------------------------------
-
-cat(paste0("# Min abundance: ", min_abundance, " reads.\n"))
-cat(paste0("# Min occurence: ", min_occurrence, " samples.\n"))
-cat(paste0("# Min length: ", min_bp, " bp.\n"))
-cat(paste0("# Input seqtab: ", dim(seqtab)[1], " samples and ", dim(seqtab)[2], " ASVs.\n"))
-cat(paste0("# Removed ASVs: ", sum(discard_asvs), "\n"))
-cat(paste0("# Output seqtab: ", dim(filtered_seqtab)[1], " samples and ", dim(filtered_seqtab)[2], " ASVs.\n"))

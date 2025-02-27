@@ -15,7 +15,7 @@ parser <- add_argument(parser,
 
 parser <- add_argument(parser,
   arg = "--blast",
-  help = "Path to the blast output file."
+  help = "Path to the blast file."
 )
 
 parser <- add_argument(parser,
@@ -26,19 +26,19 @@ parser <- add_argument(parser,
 parser <- add_argument(parser,
   arg = "--min_query_coverage",
   default = 0.99,
-  help = "At least this portion of the query needs to be covered by the subject to consider removing it."
+  help = "Minimum fraction of the query sequence that must be aligned for removal consideration."
 )
 
 parser <- add_argument(parser,
   arg = "--min_gaps_subject",
   default = 15,
-  help = "Minimum required gap length in the subject for the query to be removed."
+  help = "Minimum length of internal gaps in the subject sequence for query removal."
 )
 
 parser <- add_argument(parser,
   arg = "--diff_ranks_log",
   default = -0.4,
-  help = "Maximum difference between log-transformed ranks [log(rank_query) - log(rank_subject)] to remove the subject instead of the query. This ensures that query instead of subject is kept when the abundance rank of query is considerably lower (i.e., query is more abundamt than subject)."
+  help = "Maximum difference between log-transformed ranks [log(rank_query) - log(rank_subject)] to remove the subject instead of the query. This ensures that query instead of subject is kept when the abundance rank of query is considerably lower (i.e., query is more abundant than subject)."
 )
 
 parser <- add_argument(parser,
@@ -67,7 +67,8 @@ read_blast <- function(blast) {
       "qseqid", "sseqid", "pident", "length", "mismatch",
       "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore",
       "qlen", "slen"
-    )
+    ),
+    show_col_types = F
   ) |>
     filter(qseqid != sseqid) # remove self hits
 }
@@ -102,7 +103,7 @@ query_covered_threshold <- args$min_query_coverage
 min_gaps_subject <- args$min_gaps_subject
 diff_ranks_log <- args$diff_ranks_log
 
-# Read and process fasta --------------------------------------------------
+# Process fasta -----------------------------------------------------------
 
 fasta_df <-
   tibble(
@@ -119,7 +120,7 @@ asvs_by_rank <-
   arrange(-value) |>
   dplyr::rename(total_counts = value) |>
   mutate(rank = row_number()) |>
-  left_join(fasta_df)
+  left_join(fasta_df, by = "ASV")
 
 # Detect sequences with inverted fragments --------------------------------
 ## these need to be removed directly as they may cause problems with IRanges
@@ -162,7 +163,8 @@ querys_coverage <-
   summarise(
     total_aln_length_query = calculate_aligned_positions(qstart, qend),
     total_aln_length_subject = calculate_aligned_positions(sstart, send),
-    aligned_positions = print_aligned_positions(qstart, qend)
+    aligned_positions = print_aligned_positions(qstart, qend),
+    .groups = "drop_last"
   ) |>
   mutate(
     pair = paste(sort(c(qseqid, sseqid)), collapse = "-"),
@@ -216,9 +218,9 @@ removed_asvs <-
   colSums(seqtab[, discard_asvs]) |>
   as_tibble(rownames = "ASV") |>
   dplyr::rename(reads = value) |>
-  mutate(reason_removed = case_when(
-    ASV %in% inverted_seqs_sequences ~ "inverted_seq",
-    TRUE ~ "internal_gaps"
+  mutate(step_removed = case_when(
+    ASV %in% inverted_seqs_sequences ~ "4.Internal gaps - Inverted sequence",
+    TRUE ~ "4.Internal gaps - Too many gaps"
   ))
 
 # Write output ------------------------------------------------------------

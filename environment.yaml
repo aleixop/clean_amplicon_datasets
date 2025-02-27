@@ -9,5 +9,7 @@ dependencies:
   - mafft
   - r-tidyverse
   - r-argparser
+  - r-knitr
   - bioconductor-biostrings
   - bioconductor-iranges
+  - bioconductor-dada2

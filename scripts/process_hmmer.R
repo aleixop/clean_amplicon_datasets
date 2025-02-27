@@ -52,7 +52,7 @@ read_hmmer <- function(hmmer) {
       "domain_number_clu", "domain_number_ov", "domain_number_env", "domain_number_dom", "domain_number_rep", "domain_number_inc", "description"
     )
 
-  read_table(hmmer, col_names = hmmer_colnames, comment = "#")
+  read_table(hmmer, col_names = hmmer_colnames, comment = "#", show_col_types = F)
 }
 
 # Read args ---------------------------------------------------------------
@@ -86,7 +86,7 @@ removed_asvs <-
   colSums(seqtab[, discard_asvs]) |>
   as_tibble(rownames = "ASV") |>
   dplyr::rename(reads = value) |>
-  mutate(reason_removed = "hmmer_18S")
+  mutate(step_removed = "3.HMMER search 18S")
 
 # Write output ------------------------------------------------------------
 
