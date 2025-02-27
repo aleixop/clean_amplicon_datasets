@@ -67,3 +67,41 @@ conda activate base
 cd clean_amplicon_datasets
 mamba env create --name clean_amplicon_datasets --file environment.yaml
 ```
+
+### Step 3: prepare your input files
+
+In case you want to test the pipeline, this repository contains files for testing in `data/input/`. To run the pipeline on your own samples just removed these files and add your seqtab (or seqtabs) to `data/input/`. These should follow this naming:
+
+```
+data/input/<dataset1>.rds
+data/input/<dataset2>.rds
+...
+```
+
+### Step 4: run the pipeline
+
+#### With manual installation
+
+Load all the [required software](#manual-installation) or make sure that paths for software are exported and run this code from the root of the project (where the `Snakefile` is located). You must write the number of threads you want to use:
+
+```
+snakemake --cores <threads>
+```
+
+If using an HPC with SLURM, you can find a template to run this pipeline [here](scripts/clean_amplicon_headers.sh)
+
+#### With conda installation
+
+Activate the environment you created in [Step 2](#conda-installation):
+
+```
+conda activate clean_amplicon_datasets
+```
+
+And run this code from the root of the project (where the `Snakefile` is located). You must write the number of threads you want to use:
+
+```
+snakemake --cores <threads>
+```
+
+## Pipeline steps in detail
