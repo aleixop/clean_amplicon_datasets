@@ -37,7 +37,7 @@ The required software for this pipeline is the following:
 - [`mafft`](https://mafft.cbrc.jp/alignment/software/)
 - [`hmmer`](http://hmmer.org/download.html)
 
-And the following R packages (you can just copy the following chunk to the R terminal):
+And the following R packages (you can just copy the following chunk into the R terminal):
 
 ```
 install.packages(c("tidyverse","argparser","knitr"), repos = "https://cloud.r-project.org")
@@ -88,7 +88,7 @@ Load all the [required software](#manual-installation) or make sure that paths f
 snakemake --cores <threads>
 ```
 
-If using an HPC with SLURM, you can find a template to run this pipeline [here](scripts/clean_amplicon_headers.sh)
+If using an HPC with SLURM, you can find a template to run this pipeline [here](scripts/clean_amplicon_datasets.sh)
 
 #### With conda installation
 
