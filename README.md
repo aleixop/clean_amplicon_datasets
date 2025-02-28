@@ -69,7 +69,7 @@ BiocManager::install(c("Biostrings","IRanges","dada2","DECIPHER"))
 
 #### Conda installation
 
-First of all, if you don't have mamba installed, follow the steps explained [here](https://snakemake.readthedocs.io/en/stable/tutorial/setup.html#step-1-installing-mambaforge) to do so. 
+First of all, if you don't have mamba installed, follow the steps explained [here](https://snakemake.readthedocs.io/en/stable/tutorial/setup.html#step-1-installing-miniforge) to do so. 
 
 Alternatively, you can install mamba like this:
 
@@ -88,7 +88,7 @@ mamba env create --name clean_amplicon_datasets --file environment.yaml
 
 ### Step 3: prepare your input files
 
-In case you want to test the pipeline, this repository contains files for testing in `data/input/`. To run the pipeline on your own samples just removed these files and add your seqtab (or seqtabs) to `data/input/`. These should follow this naming:
+In case you want to test the pipeline, this repository contains files for testing in `data/input/`. To run the pipeline on your own samples just remove these files and add your seqtab (or seqtabs) to `data/input/`. These should follow this naming:
 
 ```
 data/input/<dataset1>.rds
