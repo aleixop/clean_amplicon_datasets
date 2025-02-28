@@ -29,13 +29,13 @@ suppressMessages(library(tidyverse))
 
 args <- parse_args(parser)
 
-seqtabs <- map(args$seqtabs, readRDS)
+seqtabs <- map(args$seqtabs, ~ as.matrix(readRDS(.x)))
 out_seqtab <- args$out_seqtab
 
 # Merge seqtabs -----------------------------------------------------------
 
 merged_seqtab <- 
-  mergeSequenceTables(tables = seqtabs)
+  mergeSequenceTables(tables = seqtabs, orderBy = NULL)
 
 # Write output ------------------------------------------------------------
 

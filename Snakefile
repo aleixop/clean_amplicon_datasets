@@ -1,6 +1,5 @@
 SAMPLES = sorted(glob_wildcards("data/input/{sample}.rds").sample)
 MERGING = len(SAMPLES) > 1
-CLUSTERING_IDENTITY = 100 # identity to cluster the merged seqtab
 SEED=123 # for reproducibility
 
 # Define the final outputs for individual sample processing
@@ -11,10 +10,9 @@ sample_outputs = expand("results/datasets/{sample}/{sample}_report.tsv", sample 
 # If merging is required, include merging outputs
 if MERGING:
     merging_outputs = [
-        "results/final_merged/merged_seqtab.rds",
-        "results/final_merged/clusters.tsv",
-        expand("results/final_merged/merged_clust{perc_identity}_seqtab.rds", perc_identity=[CLUSTERING_IDENTITY]),
-        "results/final_merged/overall_report.tsv"
+        "results/final/clusters.tsv",
+        "results/final/final_seqtab.rds",
+        "results/final/overall_report.tsv"
     ]
 else:
     merging_outputs = []
@@ -333,7 +331,7 @@ rule merge_seqtabs:
         seqtabs = expand("results/datasets/{sample}/{sample}_final_seqtab.rds", sample=SAMPLES),
         script = "scripts/merge_seqtabs.R"
     output:
-        merged_seqtab = "results/final_merged/merged_seqtab.rds"
+        merged_seqtab = "results/final/merged_seqtab.rds"
     shell:
         "Rscript {input.script} "
         "--seqtabs {input.seqtabs} "
@@ -341,15 +339,15 @@ rule merge_seqtabs:
 
 rule cluster_merged_seqtab:
     input:
-        merged_seqtab = "results/final_merged/merged_seqtab.rds",
+        merged_seqtab = "results/final/merged_seqtab.rds",
         script = "scripts/cluster_seqtab.R"
     params:
-        perc_identity = CLUSTERING_IDENTITY,
+        perc_identity = 100,
         min_coverage = 0.9,
         representative_method = "abundance"
     output:
-        clustered_seqtab = f"results/final_merged/merged_clust{CLUSTERING_IDENTITY}_seqtab.rds", 
-        out_clusters = "results/final_merged/clusters.tsv"  # Correspondence between ASVs and cluster representatives
+        clustered_seqtab = "results/final/final_seqtab.rds", 
+        out_clusters = "results/final/clusters.tsv"  # Correspondence between ASVs and cluster representatives
     shell:
         "Rscript {input.script} "
             "--seqtab {input.merged_seqtab} "
@@ -362,11 +360,11 @@ rule cluster_merged_seqtab:
 
 rule generate_overall_report:
     input:
-        merged_seqtab = "results/final_merged/merged_seqtab.rds",  # Merged seqtab file
-        clust_seqtab = expand("results/final_merged/merged_clust{perc_identity}_seqtab.rds", perc_identity = CLUSTERING_IDENTITY),  # Clustered merged seqtab file
-        reports = expand("results/datasets/{sample}/{sample}_report.tsv", sample=SAMPLES),  # Reports from each sample
+        merged_seqtab = temp("results/final/merged_seqtab.rds"),  # Merged seqtab file
+        clust_seqtab = "results/final/final_seqtab.rds", # Clustered merged seqtab file
+        reports = expand("results/datasets/{sample}/{sample}_report.tsv", sample=SAMPLES)  # Reports from each sample
     output:
-        out_report = "results/final_merged/overall_report.tsv",  # Final overall report
+        out_report = "results/final/overall_report.tsv",  # Final overall report
     shell:
         "Rscript scripts/overall_report.R "
         "--merged_seqtab {input.merged_seqtab} "
