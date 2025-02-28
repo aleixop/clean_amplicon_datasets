@@ -1,18 +1,34 @@
-SAMPLES = glob_wildcards("data/input/{sample}.rds").sample
+SAMPLES = sorted(glob_wildcards("data/input/{sample}.rds").sample)
+MERGING = len(SAMPLES) > 1
+CLUSTERING_IDENTITY = 100 # identity to cluster the merged seqtab
+
+# Define the final outputs for individual sample processing
+sample_outputs = expand("results/datasets/{sample}/{sample}_report.tsv", sample = SAMPLES) + \
+                 expand("results/datasets/{sample}/{sample}_final_seqtab.rds", sample = SAMPLES) + \
+                 expand("results/datasets/{sample}/{sample}_removed_seqs.txt", sample = SAMPLES)
+
+# If merging is required, include merging outputs
+if MERGING:
+    merging_outputs = [
+        "results/final_merged/merged_seqtab.rds",
+        "results/final_merged/clusters.tsv",
+        expand("results/final_merged/merged_clust{perc_identity}_seqtab.rds", perc_identity=[CLUSTERING_IDENTITY]),
+        "results/final_merged/overall_report.tsv"
+    ]
+else:
+    merging_outputs = []
 
 rule all:
     input:
-        expand("results/final/{sample}_report.tsv", sample=SAMPLES),
-        expand("results/final/{sample}_final_seqtab.rds", sample=SAMPLES),
-        expand("results/final/{sample}_removed_seqs.txt", sample=SAMPLES)
+        sample_outputs + merging_outputs
 
 rule filter_seqtab:
     input:
         seqtab = "data/input/{sample}.rds",
         script = "scripts/filter_seqtab.R"
     output:
-        filtered_seqtab="results/1-filtering/{sample}_filtering_seqtab.rds",
-        removed_seqs="results/1-filtering/{sample}_filtering_removed_seqs.txt"
+        filtered_seqtab="results/datasets/{sample}/1-filtering/{sample}_filtering_seqtab.rds",
+        removed_seqs="results/datasets/{sample}/1-filtering/{sample}_filtering_removed_seqs.txt"
     params:
         min_abundance = 2,
         min_occurrence = 1,
@@ -26,35 +42,13 @@ rule filter_seqtab:
             "--out_seqtab {output.filtered_seqtab} "
             "--out_removed_seqs {output.removed_seqs}"
 
-rule cluster_seqtab:
-    input:
-        filtered_seqtab = "results/1-filtering/{sample}_filtering_seqtab.rds",
-        script = "scripts/cluster_seqtab.R"
-    output:
-        clustered_seqtab = "results/2-clustering/{sample}_clustering_seqtab.rds", 
-        out_clusters = "results/2-clustering/{sample}_clusters.tsv",  # Correspondence between ASVs and cluster representatives
-        removed_seqs="results/2-clustering/{sample}_clustering_removed_seqs.txt"
-    params:
-        perc_identity = 100,
-        min_coverage = 0.9,
-        representative_method = "abundance"
-    shell:
-        "Rscript {input.script} "
-            "--seqtab {input.filtered_seqtab} "
-            "--perc_identity {params.perc_identity} "
-            "--min_coverage {params.min_coverage} "
-            "--representative_method {params.representative_method} "
-            "--out_seqtab {output.clustered_seqtab} "
-            "--out_clusters {output.out_clusters} "
-            "--out_removed_seqs {output.removed_seqs}"
-
 rule align_asvs:
     input:
-        clustered_seqtab = "results/2-clustering/{sample}_clustering_seqtab.rds",  
+        clustered_seqtab = "results/datasets/{sample}/1-filtering/{sample}_filtering_seqtab.rds",  
         script = "scripts/seqtab_to_fasta.R"  # The script that generates a FASTA file from seqtab
     output:
-        fasta_file = "results/3-hmmsearch/{sample}.fasta",
-        aligned_fasta = "results/3-hmmsearch/{sample}.pir"
+        fasta_file = temp("results/datasets/{sample}/2-hmmsearch/{sample}.fasta"),
+        aligned_fasta = temp("results/datasets/{sample}/2-hmmsearch/{sample}.pir")
     shell:
         # Step 1: Generate FASTA from seqtab
         "Rscript {input.script} "
@@ -70,31 +64,31 @@ rule align_asvs:
 
 rule hmmbuild:
     input:
-        aligned_fasta = "results/3-hmmsearch/{sample}.pir"  # The aligned FASTA from the align_asvs rule
+        aligned_fasta = "results/datasets/{sample}/2-hmmsearch/{sample}.pir"  # The aligned FASTA from the align_asvs rule
     output:
-        hmm_profile = "results/3-hmmsearch/{sample}.hmm"  # The generated HMM profile
+        hmm_profile = temp("results/datasets/{sample}/2-hmmsearch/{sample}.hmm")  # The generated HMM profile
     shell:
         # Run hmmbuild to generate an HMM profile
         "hmmbuild {output.hmm_profile} {input.aligned_fasta} > /dev/null"
 
 rule hmmsearch:
     input:
-        hmm_profile = "results/3-hmmsearch/{sample}.hmm",  # The HMM profile from hmmbuild
-        fasta = "results/3-hmmsearch/{sample}.fasta"
+        hmm_profile = "results/datasets/{sample}/2-hmmsearch/{sample}.hmm",  # The HMM profile from hmmbuild
+        fasta = "results/datasets/{sample}/2-hmmsearch/{sample}.fasta"
     output:
-        hmm_search_results = "results/3-hmmsearch/{sample}.hmmsearch"  # The HMM search results
+        hmm_search_results = temp("results/datasets/{sample}/2-hmmsearch/{sample}.hmmsearch")  # The HMM search results
     shell:
         # Run hmmsearch using the generated HMM profile against the FASTA file
         "hmmsearch --tblout {output.hmm_search_results} {input.hmm_profile} {input.fasta} > /dev/null"
 
 rule process_hmmer:
     input:
-        seqtab = "results/2-clustering/{sample}_clustering_seqtab.rds",
-        hmmer = "results/3-hmmsearch/{sample}.hmmsearch",
+        seqtab = "results/datasets/{sample}/1-filtering/{sample}_filtering_seqtab.rds",
+        hmmer = "results/datasets/{sample}/2-hmmsearch/{sample}.hmmsearch",
         script = "scripts/process_hmmer.R"
     output:
-        filtered_seqtab = "results/3-hmmsearch/{sample}_hmmsearch_seqtab.rds",
-        removed_seqs = "results/3-hmmsearch/{sample}_hmmsearch_removed_seqs.txt"
+        filtered_seqtab = "results/datasets/{sample}/2-hmmsearch/{sample}_hmmsearch_seqtab.rds",
+        removed_seqs = "results/datasets/{sample}/2-hmmsearch/{sample}_hmmsearch_removed_seqs.txt"
     params:
         min_evalue = 1e-5
     shell:
@@ -107,11 +101,11 @@ rule process_hmmer:
 
 rule make_blast_db:
     input:
-        seqtab = "results/3-hmmsearch/{sample}_hmmsearch_seqtab.rds",
+        seqtab = "results/datasets/{sample}/2-hmmsearch/{sample}_hmmsearch_seqtab.rds",
         script = "scripts/seqtab_to_fasta.R"
     output:
-        fasta = "results/4-internal_gaps/{sample}.fasta",
-        blast_db = directory("results/4-internal_gaps/{sample}_blastdb")
+        fasta = temp("results/datasets/{sample}/3-internal_gaps/{sample}.fasta"),
+        blast_db = temp(directory("results/datasets/{sample}/3-internal_gaps/{sample}_blastdb"))
     shell:
         # Generate FASTA from the filtered seqtab
         # Add new names to avoid problems with BLAST and order sequences by decreasing abundance (needed to detect internal gaps)
@@ -125,10 +119,10 @@ rule make_blast_db:
 
 rule blast_internal_gaps:
     input:
-        blast_db = "results/4-internal_gaps/{sample}_blastdb",  # BLAST database prefix
-        fasta = "results/4-internal_gaps/{sample}.fasta"
+        blast_db = "results/datasets/{sample}/3-internal_gaps/{sample}_blastdb",  # BLAST database prefix
+        fasta = "results/datasets/{sample}/3-internal_gaps/{sample}.fasta"
     output:
-        blast_gaps = "results/4-internal_gaps/{sample}_blast_gaps.txt"
+        blast_gaps = temp("results/datasets/{sample}/3-internal_gaps/{sample}_blast_gaps.txt")
     params:
         perc_identity = 95
     shell:
@@ -143,13 +137,13 @@ rule blast_internal_gaps:
 
 rule process_blast_gaps:
     input:
-        seqtab = "results/3-hmmsearch/{sample}_hmmsearch_seqtab.rds",
-        blast = "results/4-internal_gaps/{sample}_blast_gaps.txt",
-        fasta = "results/4-internal_gaps/{sample}.fasta",
+        seqtab = "results/datasets/{sample}/2-hmmsearch/{sample}_hmmsearch_seqtab.rds",
+        blast = "results/datasets/{sample}/3-internal_gaps/{sample}_blast_gaps.txt",
+        fasta = "results/datasets/{sample}/3-internal_gaps/{sample}.fasta",
         script = "scripts/process_blast_internal_gaps.R"
     output:
-        filtered_seqtab = "results/4-internal_gaps/{sample}_internal-gaps_seqtab.rds",
-        removed_seqs = "results/4-internal_gaps/{sample}_internal-gaps_removed_seqs.txt"
+        filtered_seqtab = "results/datasets/{sample}/3-internal_gaps/{sample}_internal-gaps_seqtab.rds",
+        removed_seqs = "results/datasets/{sample}/3-internal_gaps/{sample}_internal-gaps_removed_seqs.txt"
     params:
         min_query_coverage = 0.99,  # Minimum fraction of the query sequence that must be aligned for removal consideration (default: 99%).
         min_gaps_subject = 15,  # Minimum length of internal gaps in the subject sequence for removal (default: 15 bases).
@@ -167,11 +161,11 @@ rule process_blast_gaps:
 
 rule trim_fasta_tails:
     input:
-        seqtab = "results/4-internal_gaps/{sample}_internal-gaps_seqtab.rds",
+        seqtab = "results/datasets/{sample}/3-internal_gaps/{sample}_internal-gaps_seqtab.rds",
         script = "scripts/seqtab_to_fasta.R"  # The script to generate the FASTA file from seqtab
     output:
-        fasta = "results/5-chimeras/{sample}.fasta",
-        fasta_trimmed = "results/5-chimeras/{sample}_trimmed_1-180.fasta"
+        fasta = temp("results/datasets/{sample}/4-chimeras/{sample}.fasta"),
+        fasta_trimmed = temp("results/datasets/{sample}/4-chimeras/{sample}_trimmed_1-180.fasta")
     shell:
         # Step 1: Generate FASTA file from seqtab with the -add_names flag
         "Rscript {input.script} "
@@ -184,18 +178,18 @@ rule trim_fasta_tails:
 
 rule make_blast_db_2: # we deleted seqs with gaps after the first db, so we need to redo it with the new fasta (and new names) 
     input:
-        fasta = "results/5-chimeras/{sample}.fasta",
+        fasta = "results/datasets/{sample}/4-chimeras/{sample}.fasta",
     output:
-        blast_db = directory("results/5-chimeras/{sample}_blastdb")
+        blast_db = temp(directory("results/datasets/{sample}/4-chimeras/{sample}_blastdb"))
     shell:        
         "makeblastdb -in {input.fasta} -out {output.blast_db}/{wildcards.sample} -dbtype nucl > /dev/null"
 
 rule blast_chimeras_1:
     input:
-        fasta_trimmed = "results/5-chimeras/{sample}_trimmed_1-180.fasta",
-        blast_db = "results/5-chimeras/{sample}_blastdb"
+        fasta_trimmed = "results/datasets/{sample}/4-chimeras/{sample}_trimmed_1-180.fasta",
+        blast_db = "results/datasets/{sample}/4-chimeras/{sample}_blastdb"
     output:
-        blast_chimeras_1 = "results/5-chimeras/{sample}_blast_chimeras_1.txt"
+        blast_chimeras_1 = temp("results/datasets/{sample}/4-chimeras/{sample}_blast_chimeras_1.txt")
     shell:
         # Perform the BLAST search on the trimmed FASTA file
         "blastn "
@@ -209,12 +203,12 @@ rule blast_chimeras_1:
 
 rule process_chimeras_1:
     input:
-        seqtab = "results/4-internal_gaps/{sample}_internal-gaps_seqtab.rds",
-        blast = "results/5-chimeras/{sample}_blast_chimeras_1.txt",
-        fasta = "results/5-chimeras/{sample}.fasta",
+        seqtab = "results/datasets/{sample}/3-internal_gaps/{sample}_internal-gaps_seqtab.rds",
+        blast = "results/datasets/{sample}/4-chimeras/{sample}_blast_chimeras_1.txt",
+        fasta = "results/datasets/{sample}/4-chimeras/{sample}.fasta",
         script = "scripts/process_chimeras_1.R"
     output:
-        out_list = "results/5-chimeras/{sample}_putative_chimeras.txt"
+        out_list = temp("results/datasets/{sample}/4-chimeras/{sample}_putative_chimeras.txt")
     shell:
         "Rscript {input.script} "
         "--seqtab {input.seqtab} "
@@ -224,20 +218,21 @@ rule process_chimeras_1:
 
 rule trim_fasta_heads:
     input:
-        fasta = "results/5-chimeras/{sample}.fasta",
-        putative_chimeras = "results/5-chimeras/{sample}_putative_chimeras.txt"
+        fasta = "results/datasets/{sample}/4-chimeras/{sample}.fasta",
+        putative_chimeras = "results/datasets/{sample}/4-chimeras/{sample}_putative_chimeras.txt"
     output:
-        fasta_trimmed = "results/5-chimeras/{sample}_trimmed_241-end.fasta"
+        fasta_trimmed = temp("results/datasets/{sample}/4-chimeras/{sample}_trimmed_241-end.fasta"),
     shell:
         "seqkit grep -w 0 -f {input.putative_chimeras} {input.fasta} 2> /dev/null | "
-        "seqkit subseq -r 241:-1 > {output.fasta_trimmed} 2> /dev/null"
+        "seqkit subseq -r 241:-1 > {output.fasta_trimmed} 2> /dev/null && "
+        "rm {input.fasta}.seqkit.fai" # remove fasta index created by seqkit
 
 rule blast_chimeras_2:
     input:
-        fasta_trimmed = "results/5-chimeras/{sample}_trimmed_241-end.fasta",
-        blast_db = "results/5-chimeras/{sample}_blastdb"
+        fasta_trimmed = "results/datasets/{sample}/4-chimeras/{sample}_trimmed_241-end.fasta",
+        blast_db = "results/datasets/{sample}/4-chimeras/{sample}_blastdb"
     output:
-        blast_chimeras_2 = "results/5-chimeras/{sample}_blast_chimeras_2.txt"
+        blast_chimeras_2 = temp("results/datasets/{sample}/4-chimeras/{sample}_blast_chimeras_2.txt")
     params:
         perc_identity = 95,
         evalue = 1e-30
@@ -253,15 +248,15 @@ rule blast_chimeras_2:
 
 rule process_chimeras_2:
     input:
-        seqtab = "results/4-internal_gaps/{sample}_internal-gaps_seqtab.rds",
-        blast1 = "results/5-chimeras/{sample}_blast_chimeras_1.txt",
-        blast2 = "results/5-chimeras/{sample}_blast_chimeras_2.txt",
-        fasta = "results/5-chimeras/{sample}.fasta",
+        seqtab = "results/datasets/{sample}/3-internal_gaps/{sample}_internal-gaps_seqtab.rds",
+        blast1 = "results/datasets/{sample}/4-chimeras/{sample}_blast_chimeras_1.txt",
+        blast2 = "results/datasets/{sample}/4-chimeras/{sample}_blast_chimeras_2.txt",
+        fasta = "results/datasets/{sample}/4-chimeras/{sample}.fasta",
         script = "scripts/process_chimeras_2.R"
     output:
-        final_seqtab = "results/5-chimeras/{sample}_chimeras_seqtab.rds",
-        removed_seqs = "results/5-chimeras/{sample}_removed_seqs.txt",
-        out_chimeras = "results/5-chimeras/{sample}_chimeras.txt"
+        final_seqtab = "results/datasets/{sample}/4-chimeras/{sample}_chimeras_seqtab.rds",
+        removed_seqs = "results/datasets/{sample}/4-chimeras/{sample}_removed_seqs.txt",
+        out_chimeras = "results/datasets/{sample}/4-chimeras/{sample}_chimeras.txt"
     params:
         max_pident_chimera_parent = 99,
         max_pident_parents = 95,
@@ -279,29 +274,28 @@ rule process_chimeras_2:
         "--max_pident_parents {params.max_pident_parents} "
         "--max_chimera_occurrence {params.max_chimera_occurrence}"
 
-rule create_final_dir: # create dir and copy the final seqtab there
+rule create_symlink_final_seqtab: # create symlink of final seqtab to the root of the sample directory
     input:
-       seqtab = "results/5-chimeras/{sample}_chimeras_seqtab.rds"
+       seqtab = "results/datasets/{sample}/4-chimeras/{sample}_chimeras_seqtab.rds"
     output:
-       final_seqtab = "results/final/{sample}_final_seqtab.rds"
+       final_seqtab = "results/datasets/{sample}/{sample}_final_seqtab.rds"
     shell:
-        "cp {input.seqtab} {output.final_seqtab}"
+        "ln -s ${{PWD}}/{input.seqtab} {output.final_seqtab}"
 
 rule generate_report:
     input:
         original_seqtab = "data/input/{sample}.rds",  # Original sequence table
-        final_seqtab = "results/final/{sample}_final_seqtab.rds",  # Final cleaned seqtab
+        final_seqtab = "results/datasets/{sample}/{sample}_final_seqtab.rds",  # Final cleaned seqtab
         removed_seqs = [
-            "results/1-filtering/{sample}_filtering_removed_seqs.txt",  # Step 1 - Filtering
-            "results/2-clustering/{sample}_clustering_removed_seqs.txt",  # Step 2 - Clustering
-            "results/3-hmmsearch/{sample}_hmmsearch_removed_seqs.txt",  # Step 3 - HMMER
-            "results/4-internal_gaps/{sample}_internal-gaps_removed_seqs.txt",  # Step 4 - Internal Gaps
-            "results/5-chimeras/{sample}_removed_seqs.txt"  # Step 5 - Chimeras
+            "results/datasets/{sample}/1-filtering/{sample}_filtering_removed_seqs.txt",
+            "results/datasets/{sample}/2-hmmsearch/{sample}_hmmsearch_removed_seqs.txt", 
+            "results/datasets/{sample}/3-internal_gaps/{sample}_internal-gaps_removed_seqs.txt",
+            "results/datasets/{sample}/4-chimeras/{sample}_removed_seqs.txt" 
         ],
         script = "scripts/final_report.R"  # Path to the final report script
     output:
-        out_report = "results/final/{sample}_report.tsv",  # Final report
-        out_removed_seqs = "results/final/{sample}_removed_seqs.txt"  # File of all removed sequences
+        out_report = "results/datasets/{sample}/{sample}_report.tsv",  # Final report
+        out_removed_seqs = "results/datasets/{sample}/{sample}_removed_seqs.txt"  # File of all removed sequences
     shell:
         "Rscript {input.script} "
         "--original_seqtab {input.original_seqtab} "
@@ -309,3 +303,48 @@ rule generate_report:
         "--removed_seqs {input.removed_seqs} "
         "--out_report {output.out_report} "
         "--out_removed_seqs {output.out_removed_seqs}"
+
+rule merge_seqtabs:
+    input:
+        seqtabs = expand("results/datasets/{sample}/{sample}_final_seqtab.rds", sample=SAMPLES),
+        script = "scripts/merge_seqtabs.R"
+    output:
+        merged_seqtab = "results/final_merged/merged_seqtab.rds"
+    shell:
+        "Rscript {input.script} "
+        "--seqtabs {input.seqtabs} "
+        "--out_seqtab {output.merged_seqtab}"
+
+rule cluster_seqtab:
+    input:
+        merged_seqtab = "results/final_merged/merged_seqtab.rds",
+        script = "scripts/cluster_seqtab.R"
+    params:
+        perc_identity = CLUSTERING_IDENTITY,
+        min_coverage = 0.9,
+        representative_method = "abundance"
+    output:
+        clustered_seqtab = f"results/final_merged/merged_clust{CLUSTERING_IDENTITY}_seqtab.rds", 
+        out_clusters = "results/final_merged/clusters.tsv"  # Correspondence between ASVs and cluster representatives
+    shell:
+        "Rscript {input.script} "
+            "--seqtab {input.merged_seqtab} "
+            "--perc_identity {params.perc_identity} "
+            "--min_coverage {params.min_coverage} "
+            "--representative_method {params.representative_method} "
+            "--out_seqtab {output.clustered_seqtab} "
+            "--out_clusters {output.out_clusters}"
+
+rule generate_overall_report:
+    input:
+        merged_seqtab = "results/final_merged/merged_seqtab.rds",  # Merged seqtab file
+        clust_seqtab = expand("results/final_merged/merged_clust{perc_identity}_seqtab.rds", perc_identity = CLUSTERING_IDENTITY),  # Clustered merged seqtab file
+        reports = expand("results/datasets/{sample}/{sample}_report.tsv", sample=SAMPLES),  # Reports from each sample
+    output:
+        out_report = "results/final_merged/overall_report.tsv",  # Final overall report
+    shell:
+        "Rscript scripts/overall_report.R "
+        "--merged_seqtab {input.merged_seqtab} "
+        "--clust_seqtab {input.clust_seqtab} "
+        "--reports {input.reports} "
+        "--out_report {output.out_report}"

@@ -45,12 +45,6 @@ parser <- add_argument(parser,
   help = "Path where correspondence table between ASVs and cluster representatives should be written."
 )
 
-parser <- add_argument(parser,
-  arg = "--out_removed_seqs",
-  default = "removed_seqs.txt",
-  help = "Path where file with removed ASVs should be written."
-)
-
 # Read args ---------------------------------------------------------------
 
 args <- parse_args(parser)
@@ -61,7 +55,6 @@ representative_method <- args$representative_method
 min_coverage <- args$min_coverage
 out_seqtab <- args$out_seqtab
 out_clusters <- args$out_clusters
-out_removed_seqs <- args$out_removed_seqs
 
 suppressMessages(library(tidyverse))
 suppressMessages(library(DECIPHER))
@@ -127,27 +120,19 @@ if (representative_method == "abundance") {
   stop("Representative method selection must be one of the following: 'abundance', 'length'")
 }
 
-write_tsv(clusters_out, out_clusters)
-
 representatives <-
   clusters_out |>
   ungroup() |>
   select(seq, representative)
 
+export_clusters <- 
+  clusters_out |> 
+  group_by(cluster) |> 
+  filter(n() > 1)
 
-# Export list of "removed" seqs -------------------------------------------
+cat(paste0('A total of ',nrow(export_clusters), ' sequences were clustered.\n'))
 
-removed_asvs <- # not really removed, but clustered, that is why reads = 0, this is needed for final reporting
-  clusters_out |>
-  ungroup(cluster) |>
-  filter(seq != representative) |>
-  select(ASV = seq) |>
-  mutate(
-    reads = 0,
-    step_removed = "2 - Clustering"
-  )
-
-write_tsv(removed_asvs, out_removed_seqs)
+write_tsv(export_clusters, out_clusters)
 
 # Create clustered seqtab -------------------------------------------------
 

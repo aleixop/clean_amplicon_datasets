@@ -50,9 +50,9 @@ removed_seqs <- args$removed_seqs
 out_report <- args$out_report
 out_removed_seqs <- args$out_removed_seqs
 
-if (length(removed_seqs) != 5) {
+if (length(removed_seqs) != 4) {
   len <- length(removed_seqs)
-  stop(paste0("Script expects 5 report files and you provided ", len, ". Check this and come back later."))
+  stop(paste0("Script expects 4 report files and you provided ", len, ". Check this and come back later."))
 }
 
 
@@ -69,34 +69,33 @@ all_steps <-
     "1.Filtering - Too short",
     "1.Filtering - Low abundance",
     "1.Filtering - Low occurrence",
-    "2.Clustering",
-    "3.HMMER search 18S",
-    "4.Internal gaps - Too many gaps",
-    "4.Internal gaps - Inverted sequence",
-    "5.Chimera",
+    "2.HMMER search 18S",
+    "3.Internal gaps - Too many gaps",
+    "3.Internal gaps - Inverted sequence",
+    "4.Chimera",
     "Total removed",
     "Final seqtab"
   )
 
 seqtab_stats <-
   tibble(
-    Step = c("Original seqtab", "Final seqtab", "Total removed"),
+    step = c("Original seqtab", "Final seqtab", "Total removed"),
     asvs = c(ncol(original_seqtab), ncol(final_seqtab), nrow(removed_seqs_df)),
     reads = c(sum(original_seqtab), sum(final_seqtab), sum(removed_seqs_df$reads))
   )
 
 report <-
   removed_seqs_df |>
-  group_by(Step = step_removed) |>
+  group_by(step = step_removed) |>
   summarise(
     `asvs` = n(),
     `reads` = sum(reads),
     .groups = "drop"
   ) |>
   bind_rows(seqtab_stats) |>
-  complete(Step = all_steps, fill = list(asvs = 0, reads = 0)) |>
-  mutate(Step = factor(Step, levels = all_steps)) |>
-  arrange(Step)
+  complete(step = all_steps, fill = list(asvs = 0, reads = 0)) |>
+  mutate(step = factor(step, levels = all_steps)) |>
+  arrange(step)
 
 # Write output ------------------------------------------------------------
 
