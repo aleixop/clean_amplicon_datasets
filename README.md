@@ -18,11 +18,10 @@ This is a pipeline to clean short eukaryotic amplicon datasets processed with da
 - [Pipeline steps in detail](#pipeline-steps-in-detail)
   - [Filtering](#filtering)
   - [Clustering](#clustering)
-  - [HMM search](#hmm-search)
-  - [Internal gaps](#internal-gaps)
-  - [Chimeras](#chimeras)
+  - [HMM search to remove non-ribosomal sequences](#hmm-search-to-remove-non-ribosomal-sequences)
+  - [Remove internal gaps](#remove-internal-gaps)
+  - [Remove chimeras](#remove-chimeras)
   - [Merging and clustering](#merging-and-clustering)
-
 
 ## Overview
 
