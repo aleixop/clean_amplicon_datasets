@@ -331,7 +331,7 @@ rule merge_seqtabs:
         seqtabs = expand("results/datasets/{sample}/{sample}_final_seqtab.rds", sample=SAMPLES),
         script = "scripts/merge_seqtabs.R"
     output:
-        merged_seqtab = "results/final/merged_seqtab.rds"
+        merged_seqtab = temp("results/final/merged_seqtab.rds")
     shell:
         "Rscript {input.script} "
         "--seqtabs {input.seqtabs} "
@@ -360,7 +360,7 @@ rule cluster_merged_seqtab:
 
 rule generate_overall_report:
     input:
-        merged_seqtab = temp("results/final/merged_seqtab.rds"),  # Merged seqtab file
+        merged_seqtab = "results/final/merged_seqtab.rds",  # Merged seqtab file
         clust_seqtab = "results/final/final_seqtab.rds", # Clustered merged seqtab file
         reports = expand("results/datasets/{sample}/{sample}_report.tsv", sample=SAMPLES)  # Reports from each sample
     output:
