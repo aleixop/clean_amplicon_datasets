@@ -1,6 +1,7 @@
+configfile: "config.yaml"
+SEED = config['seed']
 SAMPLES = sorted(glob_wildcards("data/input/{sample}.rds").sample)
 MERGING = len(SAMPLES) > 1
-SEED=123 # for reproducibility
 
 # Define the final outputs for individual sample processing
 sample_outputs = expand("results/datasets/{sample}/{sample}_report.tsv", sample = SAMPLES) + \
@@ -29,9 +30,9 @@ rule filter_seqtab:
         filtered_seqtab="results/datasets/{sample}/1-filtering/{sample}_filtering_seqtab.rds",
         removed_seqs="results/datasets/{sample}/1-filtering/{sample}_filtering_removed_seqs.txt"
     params:
-        min_abundance = 2,
-        min_occurrence = 1,
-        min_bp = 300
+        min_abundance = config['filtering']['min_abundance'],
+        min_occurrence = config['filtering']['min_occurrence'],
+        min_bp = config['filtering']['min_bp']
     shell:
         "Rscript {input.script} "
             "--seqtab {input.seqtab} "
@@ -50,9 +51,9 @@ rule cluster_seqtab:
         out_clusters = "results/datasets/{sample}/2-clustering/{sample}_clusters.tsv",  # Correspondence between ASVs and cluster representatives
         removed_seqs="results/datasets/{sample}/2-clustering/{sample}_clustering_removed_seqs.txt"
     params:
-        perc_identity = 100,
-        min_coverage = 0.9,
-        representative_method = "abundance"
+        perc_identity = config['clustering']['perc_identity'],
+        min_coverage = config['clustering']['min_coverage'],
+        representative_method = config['clustering']['representative_method']
     shell:
         "Rscript {input.script} "
             "--seqtab {input.filtered_seqtab} "
@@ -111,7 +112,7 @@ rule process_hmmer:
         filtered_seqtab = "results/datasets/{sample}/3-hmmsearch/{sample}_hmmsearch_seqtab.rds",
         removed_seqs = "results/datasets/{sample}/3-hmmsearch/{sample}_hmmsearch_removed_seqs.txt"
     params:
-        min_evalue = 1e-5
+        min_evalue = config['hmmer_search']['min_evalue']
     shell:
         "Rscript {input.script} "
         "--seqtab {input.seqtab} "
@@ -145,7 +146,7 @@ rule blast_internal_gaps:
     output:
         blast_gaps = temp("results/datasets/{sample}/4-internal_gaps/{sample}_blast_gaps.txt")
     params:
-        perc_identity = 95
+        perc_identity = config['internal_gaps']['blast_perc_identity']
     shell:
         # Run BLAST to identify internal gaps
         "blastn "
@@ -166,9 +167,9 @@ rule process_blast_gaps:
         filtered_seqtab = "results/datasets/{sample}/4-internal_gaps/{sample}_internal-gaps_seqtab.rds",
         removed_seqs = "results/datasets/{sample}/4-internal_gaps/{sample}_internal-gaps_removed_seqs.txt"
     params:
-        min_query_coverage = 0.99,  # Minimum fraction of the query sequence that must be aligned for removal consideration (default: 99%).
-        min_gaps_subject = 15,  # Minimum length of internal gaps in the subject sequence for removal (default: 15 bases).
-        diff_ranks_log = -0.4  # Log-transformed rank difference threshold to remove the subject instead of the query (default: -0.4).
+        min_query_coverage = config["internal_gaps"]["min_query_coverage"], # Minimum fraction of the query sequence that must be aligned for removal consideration (default: 99%).
+        min_gaps_subject = config["internal_gaps"]["min_gaps_subject"], # Minimum length of internal gaps in the subject sequence for removal (default: 15 bases).
+        diff_ranks_log = config["internal_gaps"]["diff_ranks_log"] # Log-transformed rank difference threshold to remove the subject instead of the query (default: -0.4).
     shell:
         "Rscript {input.script} "
         "--seqtab {input.seqtab} "
@@ -279,9 +280,9 @@ rule process_chimeras_2:
         removed_seqs = "results/datasets/{sample}/5-chimeras/{sample}_removed_seqs.txt",
         out_chimeras = "results/datasets/{sample}/5-chimeras/{sample}_chimeras.txt"
     params:
-        max_pident_chimera_parent = 99,
-        max_pident_parents = 95,
-        max_chimera_occurrence = 5
+        max_pident_chimera_parent = config["chimeras"]["max_pident_chimera_parent"],
+        max_pident_parents = config["chimeras"]["max_pident_parents"],
+        max_chimera_occurrence = config["chimeras"]["max_chimera_occurrence"]
     shell:
         "Rscript {input.script} "
         "--seqtab {input.seqtab} "
@@ -342,9 +343,9 @@ rule cluster_merged_seqtab:
         merged_seqtab = "results/final/merged_seqtab.rds",
         script = "scripts/cluster_seqtab.R"
     params:
-        perc_identity = 100,
-        min_coverage = 0.9,
-        representative_method = "abundance"
+        perc_identity = config['clustering_merged']['perc_identity'],
+        min_coverage = config['clustering_merged']['min_coverage'],
+        representative_method = config['clustering_merged']['representative_method']
     output:
         clustered_seqtab = "results/final/final_seqtab.rds", 
         out_clusters = "results/final/clusters.tsv"  # Correspondence between ASVs and cluster representatives

@@ -1,0 +1,37 @@
+# General settings
+seed: 123  # for reproducibility
+
+# Step 1: Filtering
+filtering:
+  min_abundance: 2 # ASVs with less than this number of overall reads will be removed.
+  min_occurrence: 1 # ASVs present in less than this number of samples will be removed.
+  min_bp: 300 # ASVs shorter than this number of base pairs will be removed.
+
+# Step 2: Clustering
+clustering:
+  perc_identity: 100 # Clustering identity in a 0-100 scale.
+  min_coverage: 0.9 # Minimum fraction of sequence positions that must be overlapping for a sequence to be clustered with the cluster representative.
+  representative_method: "abundance" # Choose whether representatives should be chosen based on 'abundance' (most abundant ASV as representative) or 'length' (longest ASV as representative).
+
+# Step 3: HMMER search
+hmmer_search:
+  min_evalue: 1e-5 # Minimum e-value to filter hmmsearch results.
+
+# Step 4: Internal gaps
+internal_gaps:
+  blast_perc_identity: 95
+  min_query_coverage: 0.99 # Minimum fraction of the query sequence that must be aligned for removal consideration (default: 99%).
+  min_gaps_subject: 15 # Minimum length of internal gaps in the subject sequence for removal (default: 15 bases).
+  diff_ranks_log: -0.4 # Log-transformed rank difference threshold to remove the subject instead of the query (default: -0.4).
+
+# Step 5: Chimera detection
+chimeras:
+  max_pident_chimera_parent: 99 # Maximum percentage of sequence identity between a chimera and both of their parents.
+  max_pident_parents: 95 # Maximum percentage of sequence identity between the parents of a chimera.
+  max_chimera_occurrence: 5 # Maximum occurrence (in percentage) that a chimera can have.
+
+# Step 6: Merging and clustering
+clustering_merged:
+  perc_identity: 100 # Clustering identity in a 0-100 scale.
+  min_coverage: 0.9 # Minimum fraction of sequence positions that must be overlapping for a sequence to be clustered with the cluster representative.
+  representative_method: "abundance" # Choose whether representatives should be chosen based on 'abundance' (most abundant ASV as representative) or 'length' (longest ASV as representative).
