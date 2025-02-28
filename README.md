@@ -18,13 +18,17 @@ This is a pipeline to clean short eukaryotic amplicon datasets processed with da
 
 ## Overview
 
-The cleaning process is based in four main steps and an additional one when processing more than one dataset:
+The cleaning process is based in five main steps and an additional one when processing more than one dataset:
 
 1. **Filtering**: Removes sequences based on minimum abundance, occurrence, and length thresholds.
-2. **HMM search**: Removes sequences that do not belong to the 18S (e.g. functional genes).
-3. **Internal gaps**: Removes sequences that contain large internal gaps.
-4. **Chimeras**: Removes chimeric sequences that derive from two different sequences in the dataset.
-5. **Merging and clustering**: Merges the different datasets into one single seqtab and clusters identical sequences (if a 100% identity is used) that may have longer ends or terminal deletions.
+2. **Clustering**: Clusters identical sequences (if a 100% identity is used) that may have longer ends or terminal deletions.
+3. **HMM search**: Removes sequences that do not belong to the 18S (e.g. functional genes).
+4. **Internal gaps**: Removes sequences that contain large internal gaps.
+5. **Chimeras**: Removes chimeric sequences that derive from two different sequences in the dataset.
+
+Additional step when cleaning more than one dataset:
+
+6. **Merging and clustering**: Merges the different datasets into one single seqtab and clusters identical sequences (if a 100% identity is used) that may have longer ends or terminal deletions.
 
 ## How to run this workflow
 
