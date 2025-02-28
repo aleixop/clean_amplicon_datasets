@@ -363,3 +363,5 @@ optional arguments:
 Then, the obtained seqtab is clustered again to collapse identical sequences by the script `cluster_seqtab.R`.
 
 ## Output files
+
+To be done, explain output files
