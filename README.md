@@ -20,8 +20,8 @@ This is a pipeline to clean short eukaryotic amplicon datasets processed with da
   - [Clustering](#clustering)
   - [HMM search to remove non-ribosomal sequences](#hmm-search-to-remove-non-ribosomal-sequences)
   - [Remove internal gaps](#remove-internal-gaps)
-  - [Remove chimeras](#remove-chimeras)
-  - [Merging and clustering](#merging-and-clustering)
+  - [Chimera removal](#chimera-removal)
+  - [Merge datasets and clustering](#merge-datasets-and-clustering)
 
 ## Overview
 
@@ -139,7 +139,7 @@ snakemake --cores <threads>
 
 ## Pipeline steps in detail 
 
-### Filtering
+### Filtering
 
 This step takes the initial seqtab and filters it by thresholds of abundance (default is to remove singletons), occurrence and minimum bp length. It uses the script in `filter_seqtab.R`:
 
