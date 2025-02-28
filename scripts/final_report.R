@@ -50,16 +50,17 @@ removed_seqs <- args$removed_seqs
 out_report <- args$out_report
 out_removed_seqs <- args$out_removed_seqs
 
-if (length(removed_seqs) != 4) {
-  len <- length(removed_seqs)
-  stop(paste0("Script expects 4 report files and you provided ", len, ". Check this and come back later."))
-}
-
-
 # Process reports ---------------------------------------------------------
 
 removed_seqs_df <-
-  map_df(removed_seqs, ~ read_tsv(.x, col_types = cols("c", "n", "c")))
+  map_df(removed_seqs[-6], ~ read_tsv(.x, col_types = cols("c", "n", "c"))) |>
+  mutate(step_removed = case_when(
+    str_detect(step_removed, "^Filtering") ~ paste0("1.", step_removed),
+    str_detect(step_removed, "^Clustering") ~ paste0("2.", step_removed),
+    str_detect(step_removed, "^HMMER") ~ paste0("3.", step_removed),
+    str_detect(step_removed, "^Internal gaps") ~ paste0("4.", step_removed),
+    str_detect(step_removed, "^Chimera") ~ paste0("5.", step_removed)
+  ))
 
 # Create final report -----------------------------------------------------
 
@@ -69,10 +70,11 @@ all_steps <-
     "1.Filtering - Too short",
     "1.Filtering - Low abundance",
     "1.Filtering - Low occurrence",
-    "2.HMMER search 18S",
-    "3.Internal gaps - Too many gaps",
-    "3.Internal gaps - Inverted sequence",
-    "4.Chimera",
+    "2.Clustering",
+    "3.HMMER search 18S",
+    "4.Internal gaps - Too many gaps",
+    "4.Internal gaps - Inverted sequence",
+    "5.Chimera",
     "Total removed",
     "Final seqtab"
   )
@@ -109,6 +111,6 @@ nreads <- sum(original_seqtab) - sum(final_seqtab)
 perc_nasvs <- round(100 * nasvs / ncol(original_seqtab), 2)
 perc_nreads <- round(100 * nreads / sum(original_seqtab), 2)
 
-cat(paste0("A total of ", nasvs, " ASVs (", perc_nasvs, "%) were removed. These represent ",nreads," reads (",perc_nreads,'%).\n'))
-cat(paste0("Here you have a more complete report. You can also find it in '",out_report,"'."))
+cat(paste0("A total of ", nasvs, " ASVs (", perc_nasvs, "%) were removed. These represent ", nreads, " reads (", perc_nreads, "%).\n"))
+cat(paste0("Here you have a more complete report. You can also find it in '", out_report, "'."))
 knitr::kable(report)

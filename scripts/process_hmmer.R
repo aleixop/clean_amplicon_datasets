@@ -86,7 +86,7 @@ removed_asvs <-
   colSums(seqtab[, discard_asvs]) |>
   as_tibble(rownames = "ASV") |>
   dplyr::rename(reads = value) |>
-  mutate(step_removed = "2.HMMER search 18S")
+  mutate(step_removed = "HMMER search 18S")
 
 # Write output ------------------------------------------------------------
 

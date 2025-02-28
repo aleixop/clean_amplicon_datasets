@@ -45,6 +45,12 @@ parser <- add_argument(parser,
   help = "Path where correspondence table between ASVs and cluster representatives should be written."
 )
 
+parser <- add_argument(parser,
+  arg = "--out_removed_seqs",
+  default = "removed_seqs.txt",
+  help = "Path where file with removed ASVs should be written."
+)
+
 # Read args ---------------------------------------------------------------
 
 args <- parse_args(parser)
@@ -55,6 +61,7 @@ representative_method <- args$representative_method
 min_coverage <- args$min_coverage
 out_seqtab <- args$out_seqtab
 out_clusters <- args$out_clusters
+out_removed_seqs <- args$out_removed_seqs
 
 suppressMessages(library(tidyverse))
 suppressMessages(library(DECIPHER))
@@ -103,14 +110,12 @@ asv_df_clusters <-
 # Choose representatives --------------------------------------------------
 
 if (representative_method == "abundance") {
-
   clusters_out <-
     asv_df_clusters |>
     group_by(cluster) |>
     mutate(representative = seq[size == max(size)][1]) |>
     select(-name)
 } else if (representative_method == "length") {
-
   clusters_out <-
     asv_df_clusters |>
     group_by(cluster) |>
@@ -125,14 +130,33 @@ representatives <-
   ungroup() |>
   select(seq, representative)
 
-export_clusters <- 
-  clusters_out |> 
-  group_by(cluster) |> 
-  filter(n() > 1)
+export_clusters <-
+  clusters_out |>
+  group_by(cluster) |>
+  filter(n() > 1) |>
+  arrange(cluster, -size) |>
+  mutate(type = case_when(
+    seq != representative ~ "hit",
+    TRUE ~ "representative"
+  ))
 
-cat(paste0('A total of ',nrow(export_clusters), ' sequences were clustered.\n'))
+cat(paste0("A total of ", sum(export_clusters$type == "hit"), " sequences were clustered.\n"))
 
 write_tsv(export_clusters, out_clusters)
+
+# Export list of "removed" seqs -------------------------------------------
+
+removed_asvs <- # not really removed, but clustered, that is why reads = 0, this is needed for final reporting
+  clusters_out |>
+  ungroup(cluster) |>
+  filter(seq != representative) |>
+  select(ASV = seq) |>
+  mutate(
+    reads = 0,
+    step_removed = "Clustering"
+  )
+
+write_tsv(removed_asvs, out_removed_seqs)
 
 # Create clustered seqtab -------------------------------------------------
 

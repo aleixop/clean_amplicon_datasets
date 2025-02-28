@@ -219,8 +219,8 @@ removed_asvs <-
   as_tibble(rownames = "ASV") |>
   dplyr::rename(reads = value) |>
   mutate(step_removed = case_when(
-    ASV %in% inverted_seqs_sequences ~ "3.Internal gaps - Inverted sequence",
-    TRUE ~ "3.Internal gaps - Too many gaps"
+    ASV %in% inverted_seqs_sequences ~ "Internal gaps - Inverted sequence",
+    TRUE ~ "Internal gaps - Too many gaps"
   ))
 
 # Write output ------------------------------------------------------------

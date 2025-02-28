@@ -83,9 +83,9 @@ removed_asvs <-
   mutate(
     step_removed =
       case_when(
-        nchar(ASV) < min_bp ~ "1.Filtering - Too short",
-        reads < min_abundance ~ "1.Filtering - Low abundance",
-        TRUE ~ "1.Filtering - Low occurrence"
+        nchar(ASV) < min_bp ~ "Filtering - Too short",
+        reads < min_abundance ~ "Filtering - Low abundance",
+        TRUE ~ "Filtering - Low occurrence"
       )
   )
 
