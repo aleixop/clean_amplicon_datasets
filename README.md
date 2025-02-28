@@ -16,12 +16,12 @@ This is a pipeline to clean short eukaryotic amplicon datasets processed with da
     - [With manual installation](#with-manual-installation)
     - [With conda installation](#with-conda-installation)
 - [Pipeline steps in detail](#pipeline-steps-in-detail)
-  - [1.Filtering](#filtering)
-  - [2.Clustering](#clustering)
-  - [3.HMM search](#hmm-search)
-  - [4.Internal gaps](#internal-gaps)
-  - [5.Chimeras](#chimeras)
-  - [6.Merging and clustering](#merging-and-clustering)
+  - [Filtering](#filtering)
+  - [Clustering](#clustering)
+  - [HMM search](#hmm-search)
+  - [Internal gaps](#internal-gaps)
+  - [Chimeras](#chimeras)
+  - [Merging and clustering](#merging-and-clustering)
 
 
 ## Overview
@@ -140,7 +140,7 @@ snakemake --cores <threads>
 
 ## Pipeline steps in detail 
 
-### 1. Filtering
+### Filtering
 
 This step takes the initial seqtab and filters it by thresholds of abundance (default is to remove singletons), occurrence and minimum bp length. It uses the script in `filter_seqtab.R`:
 
@@ -169,7 +169,7 @@ optional arguments:
                        written. [default: removed_seqs.txt]
 ```
 
-### 2. Clustering
+### Clustering
 
 If the input seqtab was created by merging different datasets, it may contain identical sequences with longer ends or terminal deletions. The idea here is to cluster the seqtab at 100% identity to merge those sequences. By default, the most abundant sequence is chosen as representative. Clustering is performed by the script `cluster_seqtab.R`, using DECIPHER's function `Clusterize`:
 
@@ -209,7 +209,7 @@ optional arguments:
                                be written. [default: removed_seqs.txt]
 ```
 
-### 3. HMM search to remove non-ribosomal sequences
+### HMM search to remove non-ribosomal sequences
 
 Some amplicon datasets may contain sequences that do not belong to the 18S (e.g., sequences derived from functional genes). In this step, a fasta is created from the seqtab file obtained from previous step. This fasta is then aligned with `mafft` (auto mode) and a HMM profile is built from the obtained aligment (with HMMER's `hmmbuild`). Then, `hmmsearch` is performed using the fasta file against the HMM profile. Sequences that do no map or have a high evalue are removed by the script `process_hmmer.R`. The idea behing this step is that the majority of sequences in the dataset should belong to the 18S. Thus the HMM profile should capture the 18S structure and sequences not belonging to the 18S should not properly align with it.
 
@@ -235,7 +235,7 @@ optional arguments:
                       written. [default: removed_seqs.txt]
 ```
 
-### 4. Remove internal gaps
+### Remove internal gaps
 
 Some sequences may contain internal gaps. In this step, an all versus all BLAST search is performed to look for sequences that have splitted hits to one or more sequences in the dataset. The obtained blast is processed with the script `process_blast_internal_gaps.R`.
 
@@ -275,7 +275,7 @@ optional arguments:
                             written. [default: removed_seqs.txt]
 ```
 
-### 5. Chimera removal
+### Chimera removal
 
 This step detects chimeras by looking for the 2 parents that originated them. It consists of 2 rounds of blast. The first one maps the first 180 bp of each sequence against the complete sequences and looks for exact matches. For each query, it keeps the subject with highest rank. This is done by script `process_chimeras_1.R`:
 
@@ -342,7 +342,7 @@ optional arguments:
 
 ```
 
-### Step 6: Merge datasets and clustering
+### Merge datasets and clustering
 
 The script automatically detects if there is more than one dataset in the input. If so, it takes the final seqtabs obtained for each datasets and merged them with the script `merge_seqtabs.R`:
 
