@@ -100,13 +100,17 @@ data/input/<dataset2>.rds
 
 #### With manual installation
 
-Load all the [required software](#manual-installation) or make sure that paths for software are exported and run this code from the root of the project (where the `Snakefile` is located). You must write the number of threads you want to use:
+Load all the [required software](#manual-installation) or make sure that paths for software are exported and run this code from the root of the project (where the `Snakefile` is located). You can write the number of threads you want to use with `--cores`:
 
 ```
 snakemake --cores <threads>
 ```
 
-If using an HPC with SLURM, you can find a template to run this pipeline [here](scripts/clean_amplicon_datasets.sh)
+If using an HPC with SLURM, you can find a template to run this pipeline [here](scripts/clean_amplicon_datasets.sh). Just modify it for your case and run it with:
+
+```
+sbatch clean_amplicon_datasets.sh
+```
 
 #### With conda installation
 
@@ -116,7 +120,7 @@ Activate the environment you created in [Step 2](#conda-installation):
 conda activate clean_amplicon_datasets
 ```
 
-And run this code from the root of the project (where the `Snakefile` is located). You must write the number of threads you want to use:
+And run this code from the root of the project (where the `Snakefile` is located). You can write the number of threads you want to use with `--cores`:
 
 ```
 snakemake --cores <threads>
