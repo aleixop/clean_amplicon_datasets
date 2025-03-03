@@ -1,6 +1,6 @@
 # Snakemake workflow to clean amplicon datasets
 
-This is a pipeline to clean short eukaryotic amplicon datasets processed with dada2. It has been fine-tuned for sequences of the V4 region of the 18S ribosomal RNA gene. If you need some help using dada2 you can take a look at our [dada2_guidelines](https://github.com/adriaaula/dada2_guidelines).
+This is a pipeline to clean short eukaryotic amplicon datasets processed with dada2. It has been fine-tuned for **sequences of the V4 region of the 18S ribosomal RNA gene**.
 
 ## Summary
 
@@ -23,6 +23,7 @@ This is a pipeline to clean short eukaryotic amplicon datasets processed with da
   - [Chimera removal](#chimera-removal)
   - [Merge datasets and clustering](#merge-datasets-and-clustering)
 - [Output explained](#output-explained)
+- [Additional help](#additional-help)
 
 ## Overview
 
@@ -106,7 +107,7 @@ data/input/<dataset2>.rds
 
 ### Step 4: modify parameters
 
-You can modify the workflow parameters by editing the config file `config.yaml`, located in the root of the project.
+You can modify the workflow parameters by editing the config file `config.yaml`, located in the root of the project. Remember that the default parameters are fine-tuned for eukaryotic datasets of the V4 region of the 18S rRNA gene. 
 
 ### Step 5: run the pipeline
 
@@ -405,3 +406,7 @@ results/
     ├── final_seqtab.rds
     ├── overall_report.tsv
 ```
+
+## Additional help
+
+If you need some help to obtain the seqtabs that are used as input in this pipeline, you can take a look at our [dada2_guidelines](https://github.com/adriaaula/dada2_guidelines).
