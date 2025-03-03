@@ -212,7 +212,7 @@ optional arguments:
 
 ### HMM search to remove non-ribosomal sequences
 
-Some amplicon datasets may contain sequences that do not belong to the 18S (e.g., sequences derived from functional genes). In this step, a fasta is created from the seqtab file obtained from previous step. This fasta is then aligned with `mafft` (auto mode) and a HMM profile is built from the obtained aligment (with HMMER's `hmmbuild`). Then, `hmmsearch` is performed using the fasta file against the HMM profile. Sequences that do no map or have a high evalue are removed by the script `process_hmmer.R`. The idea behing this step is that the majority of sequences in the dataset should belong to the 18S. Thus the HMM profile should capture the 18S structure and sequences not belonging to the 18S should not properly align with it.
+Some amplicon datasets may contain sequences that do not belong to the 18S (e.g., sequences derived from functional genes). In this step, a fasta is created from the seqtab file obtained from previous step. This fasta is then aligned with `mafft` (auto mode) and a HMM profile is built from the obtained aligment (with HMMER's `hmmbuild`). Then, `hmmsearch` is performed using the fasta file against the HMM profile. Sequences that do no map or have a high evalue are removed by the script `process_hmmer.R`. The idea behind this step is that the majority of sequences in the dataset should belong to the 18S. Thus the HMM profile should capture the 18S structure and sequences not belonging to the 18S should not properly align to it.
 
 ```
 usage: process_hmmer.R [--] [--help] [--seqtab SEQTAB] [--hmmer HMMER]
@@ -278,7 +278,7 @@ optional arguments:
 
 ### Chimera removal
 
-This step detects chimeras by looking for the 2 parents that originated them. It consists of 2 rounds of blast. The first one maps the first 180 bp of each sequence against the complete sequences and looks for exact matches. For each query, it keeps the subject with highest rank. This is done by script `process_chimeras_1.R`:
+This step detects chimeras (bimeras) by looking for the 2 parents that originated them. It consists of 2 rounds of blast. The first one maps the first 180 bp of each sequence against the complete sequences and looks for exact matches. For each query, it keeps the subject with highest rank. This is done by script `process_chimeras_1.R`:
 
 ```
 usage: process_chimeras_1.R [--] [--help] [--seqtab SEQTAB] [--blast
@@ -345,7 +345,7 @@ optional arguments:
 
 ### Merge datasets and clustering
 
-The script automatically detects if there is more than one dataset in the input. If so, it takes the final seqtabs obtained for each datasets and merged them with the script `merge_seqtabs.R`:
+The script automatically detects if there is more than one dataset in the input. If so, it takes the final seqtabs obtained for each datasets and merges them with the script `merge_seqtabs.R`:
 
 ```
 usage: merge_seqtabs.R [--] [--help] [--seqtabs SEQTABS] [--out_seqtab
@@ -362,13 +362,9 @@ optional arguments:
                     [default: merged_seqtab.rds]
 ```
 
-Then, the obtained seqtab is clustered again to collapse identical sequences by the script `cluster_seqtab.R`.
+Then, the obtained seqtab is clustered again to collapse identical sequences by the script `cluster_seqtab.R` and the final seqtab is obtained.
 
 ## Output explained
-
-All results are stored in `results/`. For each dataset, a subdirectory is created in `results/datasets/`. Inside the dataset directory, directories for each cleaning step are also created. Inside each step directory, the filtered seqtab from that specific step and a list of the removed sequences are written. Additionally, for the clustering step a file with clusters is created; and for the chimera removal step, a file with chimeras is also written. Inside the root directory of each dataset, the final filtered seqtab, all removed sequences in all steps and a report of the the process (ASVs and reads removed in each step) are given.
-
-When working with more than one dataset, a directory `results/final` is created. There, the final clustered seqtab, the clusters file and an overall report are written. 
 
 Here is an example of the output generated with the test data provided in `data/input/`:
 
@@ -406,6 +402,10 @@ results/
     ├── final_seqtab.rds
     ├── overall_report.tsv
 ```
+
+All results are stored in `results/`. For each dataset, a subdirectory is created in `results/datasets/`. Inside the dataset directory, directories for each cleaning step are also created. Inside each step directory, the filtered seqtab from that specific step and a list of the removed sequences are written. Additionally, for the clustering step a file with clusters is created; and for the chimera removal step, a file with chimeras is also written. Inside the root directory of each dataset, the final filtered seqtab, all removed sequences in all steps and a report of the the process (ASVs and reads removed in each step) are given.
+
+When working with more than one dataset, a directory `results/final` is created. There, the final clustered seqtab, the clusters file and an overall report are written. 
 
 ## Additional help
 
