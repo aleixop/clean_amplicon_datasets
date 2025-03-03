@@ -403,7 +403,7 @@ results/
     ├── overall_report.tsv
 ```
 
-All results are stored in `results/`. For each dataset, a subdirectory is created in `results/datasets/`. Inside the dataset directory, directories for each cleaning step are also created. Inside each step directory, the filtered seqtab from that specific step and a list of the removed sequences are written. Additionally, for the clustering step a file with clusters is created; and for the chimera removal step, a file with chimeras is also written. Inside the root directory of each dataset, the final filtered seqtab, all removed sequences in all steps and a report of the the process (ASVs and reads removed in each step) are given.
+All results are stored in `results/`. For each dataset, a subdirectory is created in `results/datasets/`. Inside the dataset directory, directories for each cleaning step are also created. Inside each step directory, the filtered seqtab from that specific step and a list of the removed sequences are written. Additionally, for the clustering step a file with clusters is created; and for the chimera removal step, a file with chimeras is also written. Inside the root directory of each dataset, the final filtered seqtab, all removed sequences in all steps and a report of all processings (ASVs and reads removed in each step) are given.
 
 When working with more than one dataset, a directory `results/final` is created. There, the final clustered seqtab, the clusters file and an overall report are written. 
 
