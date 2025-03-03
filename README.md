@@ -22,6 +22,7 @@ This is a pipeline to clean short eukaryotic amplicon datasets processed with da
   - [Remove internal gaps](#remove-internal-gaps)
   - [Chimera removal](#chimera-removal)
   - [Merge datasets and clustering](#merge-datasets-and-clustering)
+- [Output explained](#output-explained)
 
 ## Overview
 
@@ -362,6 +363,45 @@ optional arguments:
 
 Then, the obtained seqtab is clustered again to collapse identical sequences by the script `cluster_seqtab.R`.
 
-## Output files
+## Output explained
 
-To be done, explain output files
+All results are stored in `results/`. For each dataset, a subdirectory is created in `results/datasets/`. Inside the dataset directory, directories for each cleaning step are also created. Inside each step directory, the filtered seqtab from that specific step and a list of the removed sequences are written. Additionally, for the clustering step a file with clusters is created; and for the chimera removal step, a file with chimeras is also written. Inside the root directory of each dataset, the final filtered seqtab, all removed sequences in all steps and a report of the the process (ASVs and reads removed in each step) are given.
+
+When working with more than one dataset, a directory `results/final` is created. There, the final clustered seqtab, the clusters file and an overall report are written. 
+
+Here is an example of the output generated with the test data provided in `data/input/`:
+
+```
+results/
+│
+├── datasets/
+│   ├── dataset1/
+│   │   ├── 1-filtering/
+│   │   │   ├── dataset1_filtering_seqtab.rds
+│   │   │   ├── dataset1_filtering_removed_seqs.txt
+│   │   ├── 2-clustering/
+│   │   │   ├── dataset1_clustering_seqtab.rds
+│   │   │   ├── dataset1_clusters.tsv
+│   │   │   ├── dataset1_clustering_removed_seqs.txt
+│   │   ├── 3-hmmsearch/
+│   │   │   ├── dataset1_hmmsearch_seqtab.rds
+│   │   │   ├── dataset1_hmmsearch_removed_seqs.txt
+│   │   ├── 4-internal_gaps/
+│   │   │   ├── dataset1_internal-gaps_seqtab.rds
+│   │   │   ├── dataset1_internal-gaps_removed_seqs.txt
+│   │   ├── 5-chimeras/
+│   │   │   ├── dataset1_chimeras_seqtab.rds
+│   │   │   ├── dataset1_removed_seqs.txt
+│   │   │   ├── dataset1_chimeras.txt
+│   │   ├── dataset1_final_seqtab.rds  (Symlink to seqtab in 5-chimeras)
+│   │   ├── dataset1_removed_seqs.txt
+│   │   ├── dataset1_report.tsv
+│   │
+│   ├── dataset2/
+│   │   ├── (Same structure as dataset1)
+│
+└── final/
+    ├── clusters.tsv
+    ├── final_seqtab.rds
+    ├── overall_report.tsv
+```
