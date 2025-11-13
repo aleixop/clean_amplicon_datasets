@@ -212,10 +212,10 @@ discard_asvs <-
 # Filter seqtab -----------------------------------------------------------
 
 filtered_seqtab <-
-  seqtab[, keep_asvs]
+  seqtab[, keep_asvs, drop = F]
 
 removed_asvs <-
-  colSums(seqtab[, discard_asvs]) |>
+  colSums(seqtab[, discard_asvs, drop = F]) |>
   as_tibble(rownames = "ASV") |>
   dplyr::rename(reads = value) |>
   mutate(step_removed = case_when(
