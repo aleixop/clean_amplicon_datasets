@@ -97,6 +97,28 @@ mamba env create --name clean_amplicon_datasets --file environment.yaml
 
 ### Step 3: prepare your input files
 
+Input files are expected to be a matrix with sample names as row names and **ASV sequences** (not ids) as column names. The table should be in `.rds` format. I will change this in the future to be able to input a regular `.tsv` or `.csv` file. In the meantime, you can transform your table like this:
+
+```
+library(tidyverse)
+
+test_table <-
+  tibble(
+    ASV = c("AGCTCCAATAGCG", "ATGCCGATTGGTC", "TGGCCACATGTCA"),
+    sample1 = c(10, 0, 0),
+    sample2 = c(0, 5, 0),
+    sample3 = c(0, 0, 20)
+  )
+
+matrix_table <-
+  test_table |>
+  column_to_rownames("ASV") |>
+  t() |>
+  as.matrix()
+
+saveRDS(matrix_table, "dataset3.rds")
+```
+
 In case you want to test the pipeline, this repository contains files for testing in `data/input/`. To run the pipeline on your own samples just remove these files and add your seqtab (or seqtabs) to `data/input/`. These should follow this naming:
 
 ```
