@@ -102,7 +102,7 @@ Input files are expected to be a matrix with sample names as row names and **ASV
 ```
 library(tidyverse)
 
-test_table <-
+tsv_table <-
   tibble(
     ASV = c("AGCTCCAATAGCG", "ATGCCGATTGGTC", "TGGCCACATGTCA"),
     sample1 = c(10, 0, 0),
@@ -111,12 +111,12 @@ test_table <-
   )
 
 matrix_table <-
-  test_table |>
+  tsv_table |>
   column_to_rownames("ASV") |>
   t() |>
   as.matrix()
 
-saveRDS(matrix_table, "dataset3.rds")
+saveRDS(matrix_table, "data/input/dataset3.rds")
 ```
 
 In case you want to test the pipeline, this repository contains files for testing in `data/input/`. To run the pipeline on your own samples just remove these files and add your seqtab (or seqtabs) to `data/input/`. These should follow this naming:
